@@ -37,11 +37,22 @@
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.15.1/dist/phaser-arcade-physics.min.js"></script>
   </head>
   <body>
-    <section>
-      <button type="button" id="crazyButton" class="btn-crazy btn btn-lg btn-danger"></button>
-      <button type="button" id="startButton" class="btn-start btn btn-lg">Start</button>
-      <a href="#" class="nes-btn is-warning home-btn">Home</a>
+    <!-- @START ========== STATE 'VARS' ========== -->
+    <!--
+      used by game.js and app.js to share the pause-state
+    -->
+    <div id="pause" style="position: fixed; left: -200px">true</div>
+    <!-- @END ========== STATE 'VARS' ========== -->
 
+    <section class="overlay">
+      <!--
+      <button type="button" id="crazyButton" class="btn-crazy btn btn-lg btn-danger"></button>
+      -->
+      <button type="button" id="startButton" class="btn-start btn btn-lg">Start</button>
+      <!--
+      <a href="#" class="nes-btn is-warning home-btn">Home</a>
+      -->
+      <!--
       <div class="starting-section">
         <div
           class="text-left"
@@ -59,7 +70,7 @@
           <p>Hey, this is a socket.io tutorial. Click with caution!</p>
         </div>
       </div>
-    </section>
+    --></section>
     <!-- Socket.IO Javacript -->
     <script src="/socket.io/socket.io.js"></script>
     <script src="/js/app.js" charset="utf-8"></script>

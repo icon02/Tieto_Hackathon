@@ -12,8 +12,10 @@ var config = {
   },
 };
 
-var snake;
-var food;
+var soldier1;
+var soldier2;
+var companion1;
+var companion2;
 var cursors;
 var p2cursors;
 
@@ -27,38 +29,46 @@ var game = new Phaser.Game(config);
 
 function preload() {
   // this.load.image("food", "assets/games/snake/food.png");
-  this.load.image("food", "assets/jaeger_150.png");
-  this.load.image("body", "assets/jaeger_150.png");
+  this.load.image("background", "assets/Background.png");
+
+  this.load.image("player1", "assets/jaeger_150.png");
+  this.load.image("player2", "assets/russian_150.png");
 }
 
 function create() {
-  var Food = new Phaser.Class({
+  this.add.image(540, 360, "background");
+
+  var Companion = new Phaser.Class({
     Extends: Phaser.GameObjects.Image,
 
-    initialize: function Food(scene, x, y) {
+    initialize: function Companion(scene, x, y, player2) {
       Phaser.GameObjects.Image.call(this, scene);
-
-      this.setTexture("food");
+      this.player2 = player2;
+      this.setTexture(player2 ? "player2" : "player1");
       this.setPosition(x * 16, y * 16);
       this.setOrigin(0);
 
-      this.total = 0;
+      this.p1total = 0;
+      this.p2total = 0;
 
       scene.children.add(this);
     },
 
-    eat: function () {
-      this.total++;
+    join: function () {
+      this.player2 ? p2total-- : p1total--;
     },
   });
 
-  var Snake = new Phaser.Class({
-    initialize: function Snake(scene, x, y) {
+  var Soldier = new Phaser.Class({
+    player2: false,
+
+    initialize: function Soldier(scene, x, y, player2) {
+      this.player2 = player2;
       this.headPosition = new Phaser.Geom.Point(x, y);
 
       this.body = scene.add.group();
 
-      this.head = this.body.create(x * 16, y * 16, "body");
+      this.head = this.body.create(x * 16, y * 16, player2 ? "player2" : "player1");
       this.head.setOrigin(0);
 
       this.alive = true;
@@ -71,10 +81,16 @@ function create() {
 
       this.heading = RIGHT;
       this.direction = RIGHT;
+
+      this.companions = 0;
+
+      for (let i = 0; i < 9; i++) this.grow();
     },
 
     update: function (time) {
-      if (time >= this.moveTime) {
+      const pause = document.getElementById("pause").innerHTML;
+
+      if (time >= this.moveTime && pause === "false") {
         return this.move(time);
       }
     },
@@ -108,24 +124,24 @@ function create() {
        * Based on the heading property (which is the direction the pgroup pressed)
        * we update the headPosition value accordingly.
        *
-       * The Math.wrap call allow the snake to wrap around the screen, so when
+       * The Math.wrap call allow the solier to wrap around the screen, so when
        * it goes off any of the sides it re-appears on the other.
        */
       switch (this.heading) {
         case LEFT:
-          this.headPosition.x = Phaser.Math.Wrap(this.headPosition.x - 1, 0, 40);
+          this.headPosition.x = Phaser.Math.Wrap(this.headPosition.x - 1, 0, 64);
           break;
 
         case RIGHT:
-          this.headPosition.x = Phaser.Math.Wrap(this.headPosition.x + 1, 0, 40);
+          this.headPosition.x = Phaser.Math.Wrap(this.headPosition.x + 1, 0, 64);
           break;
 
         case UP:
-          this.headPosition.y = Phaser.Math.Wrap(this.headPosition.y - 1, 0, 30);
+          this.headPosition.y = Phaser.Math.Wrap(this.headPosition.y - 1, 0, 42);
           break;
 
         case DOWN:
-          this.headPosition.y = Phaser.Math.Wrap(this.headPosition.y + 1, 0, 30);
+          this.headPosition.y = Phaser.Math.Wrap(this.headPosition.y + 1, 0, 42);
           break;
       }
 
@@ -164,19 +180,30 @@ function create() {
     },
 
     grow: function () {
-      var newPart = this.body.create(this.tail.x, this.tail.y, "body");
+      this.companions++;
+      var newPart = this.body.create(
+        this.tail.x,
+        this.tail.y,
+        this.player2 ? "player2" : "player1",
+      );
 
       newPart.setOrigin(0);
     },
 
-    collideWithFood: function (food) {
-      if (this.head.x === food.x && this.head.y === food.y) {
+    triesHire: function (companion) {
+      const variance = 10;
+      if (
+        this.head.x >= companion.x - variance &&
+        this.head.x <= companion.x + variance &&
+        this.head.y >= companion.y - variance &&
+        this.head.y <= companion.y + variance
+      ) {
         this.grow();
 
-        food.eat();
+        companion.join();
 
-        //  For every 5 items of food eaten we'll increase the snake speed a little
-        if (this.speed > 20 && food.total % 5 === 0) {
+        //  For every 5 items of companions hired we'll increase the unit speed a little
+        if (this.speed > 20 && companion.total % 5 === 0) {
           this.speed -= 5;
         }
 
@@ -199,18 +226,20 @@ function create() {
     },
   });
 
-  food = new Food(this, 3, 4);
+  companion1 = new Companion(this, 3, 4, false);
+  companion2 = new Companion(this, 8, 6, true);
 
-  snake = new Snake(this, 8, 8);
+  soldier1 = new Soldier(this, 8, 8, false);
+  soldier2 = new Soldier(this, 50, 50, true);
 
   //  Create our keyboard controls
-  this.input.keyboard.addKeys("W,A,S,D");
+  p2cursors = this.input.keyboard.addKeys("W,A,S,D");
   cursors = this.input.keyboard.createCursorKeys();
   console.log("cursors", cursors);
 }
 
 function update(time, delta) {
-  if (!snake.alive) {
+  if (!soldier1.alive || !soldier2.alive) {
     return;
   }
 
@@ -222,20 +251,38 @@ function update(time, delta) {
    * can move in at that time is up and down.
    */
   if (cursors.left.isDown) {
-    snake.faceLeft();
+    soldier1.faceLeft();
+    // soldier2.faceLeft();
   } else if (cursors.right.isDown) {
-    snake.faceRight();
+    soldier1.faceRight();
+    // soldier2.faceRight();
   } else if (cursors.up.isDown) {
-    snake.faceUp();
+    soldier1.faceUp();
+    // soldier2.faceUp();
   } else if (cursors.down.isDown) {
-    snake.faceDown();
+    soldier1.faceDown();
+    // soldier2.faceDown();
   }
 
-  if (snake.update(time)) {
-    //  If the snake updated, we need to check for collision against food
+  if (p2cursors.W.isDown) {
+    soldier2.faceUp();
+  } else if (p2cursors.A.isDown) {
+    soldier2.faceLeft();
+  } else if (p2cursors.S.isDown) {
+    soldier2.faceDown();
+  } else if (p2cursors.D.isDown) {
+    soldier2.faceRight();
+  }
 
-    if (snake.collideWithFood(food)) {
-      repositionFood();
+  if (soldier1.update(time)) {
+    if (soldier1.triesHire(companion1)) {
+      repositionCompanion();
+    }
+  }
+
+  if (soldier2.update(time)) {
+    if (soldier2.triesHire(companion2)) {
+      repositionCompanion(true);
     }
   }
 }
@@ -249,7 +296,7 @@ function update(time, delta) {
  * @method repositionFood
  * @return {boolean} true if the food was placed, otherwise false
  */
-function repositionFood() {
+function repositionCompanion(player2) {
   //  First create an array that assumes all positions
   //  are valid for the new piece of food
 
@@ -264,7 +311,8 @@ function repositionFood() {
     }
   }
 
-  snake.updateGrid(testGrid);
+  soldier1.updateGrid(testGrid);
+  soldier2.updateGrid(testGrid);
 
   //  Purge out false positions
   var validLocations = [];
@@ -283,7 +331,8 @@ function repositionFood() {
     var pos = Phaser.Math.RND.pick(validLocations);
 
     //  And place it
-    food.setPosition(pos.x * 16, pos.y * 16);
+    if (player2) companion2.setPosition(pos.x * 16, pos.y * 16);
+    else companion1.setPosition(pos.x * 16, pos.y * 16);
 
     return true;
   } else {
