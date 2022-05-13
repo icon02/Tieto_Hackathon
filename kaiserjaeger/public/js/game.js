@@ -1,7 +1,8 @@
 var config = {
   type: Phaser.WEBGL,
-  width: 640,
-  height: 480,
+  width: 1080,
+  height: 720,
+
   backgroundColor: "#bfcc00",
   parent: "phaser-example",
   scene: {
@@ -14,6 +15,7 @@ var config = {
 var snake;
 var food;
 var cursors;
+var p2cursors;
 
 //  Direction consts
 var UP = 0;
@@ -24,8 +26,9 @@ var RIGHT = 3;
 var game = new Phaser.Game(config);
 
 function preload() {
-  this.load.image("food", "assets/games/snake/food.png");
-  this.load.image("body", "assets/games/snake/body.png");
+  // this.load.image("food", "assets/games/snake/food.png");
+  this.load.image("food", "assets/jaeger_150.png");
+  this.load.image("body", "assets/jaeger_150.png");
 }
 
 function create() {
@@ -201,7 +204,9 @@ function create() {
   snake = new Snake(this, 8, 8);
 
   //  Create our keyboard controls
+  this.input.keyboard.addKeys("W,A,S,D");
   cursors = this.input.keyboard.createCursorKeys();
+  console.log("cursors", cursors);
 }
 
 function update(time, delta) {
